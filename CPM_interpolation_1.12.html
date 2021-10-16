@@ -130,7 +130,7 @@
 			}
 			if (save) {function_val_save = function_val;};
 			res_temp = res_temp + calculefourier(function_val, false)+ "<br>,<br>";
-			if (!isAllZero(function_val)) {save = false;};
+			if (!isAllZero(fourrier_save)) {save = false;};
 			}
 			res_temp += "; position :    "
 			for (let x=0; x<3; x++){
@@ -186,7 +186,7 @@
 			}
 			if (save) {function_val_save = function_val;};
 			res_temp = res_temp + calculefourier(function_val, x ==0) + "<br>,<br>";
-			if (!isAllZero(function_val)) {save = false;};
+			if (!isAllZero(fourrier_save)) {save = false;};
 			}
 			output.innerHTML += res_temp
 		}
