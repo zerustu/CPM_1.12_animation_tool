@@ -38,9 +38,6 @@
 			timer_var = document.getElementById("timer").value;
 			presition = parseInt(document.getElementById("pres").value);
 			document.getElementById("canvas").getContext("2d").clearRect(0, 0, 1000, 400);
-			save = true
-			function_val_save = [];
-			fourrier_save = [];
 			output.innerHTML = '';
   let file = input.files[0];
 
@@ -52,6 +49,9 @@
     console.log(reader.error);
   };
   reader.onload = function() {
+			save = true
+			function_val_save = [];
+			fourrier_save = [];
 		var a = JSON.parse(reader.result);
 		var b = Object.values(Object.values(a))[1];
 		var c = Object.values(Object.values(b))[0];
