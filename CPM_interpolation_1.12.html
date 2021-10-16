@@ -130,7 +130,8 @@
 			}
 			if (save) {function_val_save = function_val;};
 			res_temp = res_temp + calculefourier(function_val, false)+ "<br>,<br>";
-			if (!isAllZero(fourrier_save)) {save = false; fourrier_save = [];;};
+			if (!isAllZero(fourrier_save)) {save = false;};
+			if(save) { fourrier_save = [];};
 			}
 			res_temp += "; position :    "
 			for (let x=0; x<3; x++){
@@ -186,7 +187,8 @@
 			}
 			if (save) {function_val_save = function_val;};
 			res_temp = res_temp + calculefourier(function_val, x ==0) + "<br>,<br>";
-			if (!isAllZero(fourrier_save)) {save = false; fourrier_save = [];};
+			if (!isAllZero(fourrier_save)) {save = false;};
+			if(save) { fourrier_save = [];};
 			}
 			output.innerHTML += res_temp
 		}
