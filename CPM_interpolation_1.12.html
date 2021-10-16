@@ -1,0 +1,314 @@
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>zerustu's CPM interpolation for 1.12.2</title>
+</head>
+<body style="background: dimgray;">
+	<input type="file" id="file-selector" class="test" accept=".json">
+	<br>
+	<label for="fname">timer variable:</label>
+  <input type="text" id="timer" name="fname">
+	<br>
+<div>
+  <input type="checkbox" id="force_catmull" name="force_catmull">
+  <label for="scales">force the catmull rom interpolation ?</label>
+</div>
+	<label for="fname">fourrier presision:</label>
+  <input type="text" id="pres" value="10" name="fname">
+	<br>
+	<button type="button" onclick="readFile(document.getElementsByClassName('test')[0])">Load!</button>
+	<br>
+	<canvas id="canvas" width="1000" height="400"></canvas>
+	<br>
+	<div class="output"></div>
+	<script type="text/javascript">
+		var output=document.getElementsByClassName("output")[0];
+		var timer_var = "";
+		var periode = 0;
+		var presition = 10;
+		var interga_press = 1000;
+		var function_val_save = [];
+		var fourrier_save = [];
+		var save = true;
+		var max = 0;
+		var rotation_order = [1, 0, 2];
+
+		function readFile(input) {
+			timer_var = document.getElementById("timer").value;
+			presition = parseInt(document.getElementById("pres").value);
+			document.getElementById("canvas").getContext("2d").clearRect(0, 0, 1000, 400);
+			save = true
+			function_val_save = [];
+			fourrier_save = [];
+			output.innerHTML = '';
+  let file = input.files[0];
+
+  let reader = new FileReader();
+
+  reader.readAsText(file);
+
+  reader.onerror = function() {
+    console.log(reader.error);
+  };
+  reader.onload = function() {
+		var a = JSON.parse(reader.result);
+		var b = Object.values(Object.values(a))[1];
+		var c = Object.values(Object.values(b))[0];
+		var d = Object.values(Object.values(c))[2];
+		var loop = c.loop;
+		var t0;
+		var t1;
+		var t2;
+		var t3;
+		var p0;
+		var p1;
+		var p2;
+		var p3;
+		var m1;
+		var m2;
+		var force_catmull = document.getElementById("force_catmull").checked;
+		if (a.format_version == "1.8.0"){
+		console.log(Object.keys(d));
+		var res = "Rotation animation:";
+		for (var i=0; i<Object.values(d).length;i++){
+			var bone = Object.keys(d)[i];
+			var bones_name = JSON.stringify(bone).replace(/['"]+/g, '')
+			var res_temp = bones_name + ': rotation :    ';
+			console.log(bones_name);
+			for (let y=0; y<3; y++) {
+			var x = rotation_order[y];
+			var function_val = [];
+			if(Object.values(d)[i].rotation!=undefined){
+				for (let i1=0; i1<Object.values(Object.values(d)[i].rotation).length-1;i1++){
+					t1 = parseFloat(Object.keys(Object.values(d)[i].rotation)[i1]);
+					function_val.push(t1);
+					p1 = Object.values(Object.values(d)[i].rotation)[i1];
+					t2 = parseFloat(Object.keys(Object.values(d)[i].rotation)[i1+1]);
+					p2 = Object.values(Object.values(d)[i].rotation)[i1+1];
+					if (p2.post!=undefined){p2 = p2.post};
+					if (p1.post==undefined && !force_catmull){
+						function_val.push(0);
+						function_val.push(0);
+						function_val.push(p2[x]-p1[x]);
+						function_val.push(p1[x]);
+					} 
+					else {
+						if (p1.post!=undefined){p1 = p1.post};
+						if(i1 == 0){
+							t0= parseFloat(Object.keys(Object.values(d)[i].rotation)[Object.values(Object.values(d)[i].rotation).length-2])-c.animation_length;
+							p0= Object.values(Object.values(d)[i].rotation)[Object.values(Object.values(d)[i].rotation).length-2];
+						}
+						else {
+							t0 = parseFloat(Object.keys(Object.values(d)[i].rotation)[i1-1]);
+							p0 = Object.values(Object.values(d)[i].rotation)[i1-1];
+						}
+						if (p0.post!=undefined){p0 = p0.post};
+						if( i1 == Object.values(Object.values(d)[i].rotation).length-2) {
+							t3 = parseFloat(Object.keys(Object.values(d)[i].rotation)[1])+c.animation_length;
+							p3 = Object.values(Object.values(d)[i].rotation)[1].post;
+						}
+						else {
+							t3 = parseFloat(Object.keys(Object.values(d)[i].rotation)[i1+2]);
+							p3 = Object.values(Object.values(d)[i].rotation)[i1+2].post;
+						}
+						if (p3.post!=undefined){p3 = p3.post};
+						m1 = (t2-t1)*((p1[x]-p0[x])/(t1-t0)-(p2[x]-p0[x])/(t2-t0)+(p2[x]-p1[x])/(t2-t1));
+						m2 = (t2-t1)*((p2[x]-p1[x])/(t2-t1)-(p3[x]-p1[x])/(t3-t1)+(p3[x]-p2[x])/(t3-t2));
+						function_val.push((2*p1[x]-2*p2[x]+m1+m2));
+						function_val.push((-3*p1[x] +3*p2[x]-2*m1-m2));
+						function_val.push( m1);
+						function_val.push(p1[x]);
+					}
+				}
+				periode = c.animation_length;
+						function_val.push(periode);
+						function_val.push(0);
+						function_val.push(0);
+						function_val.push(0);
+						function_val.push(0);
+			}
+			if (save) {function_val_save = function_val;};
+			res_temp = res_temp + calculefourier(function_val, false)+ "<br>,<br>";
+			save = false;
+			}
+			res_temp += "; position :    "
+			for (let x=0; x<3; x++){
+			var function_val = [];
+			if(Object.values(d)[i].position!=undefined){
+				for (let i1=0; i1<Object.values(Object.values(d)[i].position).length-1;i1++){
+					t1 = parseFloat(Object.keys(Object.values(d)[i].position)[i1]);
+					function_val.push(t1);
+					p1 = Object.values(Object.values(d)[i].position)[i1];
+					t2 = parseFloat(Object.keys(Object.values(d)[i].position)[i1+1]);
+					p2 = Object.values(Object.values(d)[i].position)[i1+1];
+					if (p2.post!=undefined){p2 = p2.post};
+					if (p1.post==undefined && !force_catmull){
+						function_val.push(0);
+						function_val.push(0);
+						function_val.push(p2[x]-p1[x]);
+						function_val.push(p1[x]);
+					} 
+					else {
+						if (p1.post!=undefined){p1 = p1.post};
+						if(i1 == 0){
+							t0= parseFloat(Object.keys(Object.values(d)[i].position)[Object.values(Object.values(d)[i].position).length-2])-c.animation_length;
+							p0= Object.values(Object.values(d)[i].position)[Object.values(Object.values(d)[i].position).length-2];
+						}
+						else {
+							t0 = parseFloat(Object.keys(Object.values(d)[i].position)[i1-1]);
+							p0 = Object.values(Object.values(d)[i].position)[i1-1];
+						}
+						if (p0.post!=undefined){p0 = p0.post};
+						if( i1 == Object.values(Object.values(d)[i].position).length-2) {
+							t3 = parseFloat(Object.keys(Object.values(d)[i].position)[1])+c.animation_length;
+							p3 = Object.values(Object.values(d)[i].position)[1];
+						}
+						else {
+							t3 = parseFloat(Object.keys(Object.values(d)[i].position)[i1+2]);
+							p3 = Object.values(Object.values(d)[i].position)[i1+2];
+						}
+						if (p3.post!=undefined){p3 = p3.post};
+						m1 = (t2-t1)*((p1[x]-p0[x])/(t1-t0)-(p2[x]-p0[x])/(t2-t0)+(p2[x]-p1[x])/(t2-t1));
+						m2 = (t2-t1)*((p2[x]-p1[x])/(t2-t1)-(p3[x]-p1[x])/(t3-t1)+(p3[x]-p2[x])/(t3-t2));
+						function_val.push((2*p1[x]-2*p2[x]+m1+m2));
+						function_val.push((-3*p1[x] +3*p2[x]-2*m1-m2));
+						function_val.push( m1);
+						function_val.push(p1[x]);
+					}
+				}
+				periode = c.animation_length;
+						function_val.push(periode);
+						function_val.push(0);
+						function_val.push(0);
+						function_val.push(0);
+						function_val.push(0);
+			}
+			res_temp = res_temp + calculefourier(function_val, x ==0) + "<br>,<br>";
+			}
+			output.innerHTML += res_temp
+		}
+	} else if (a.format_version != undefined){
+		output.innerHTML = "Your model format is : "+ a.format_version + " This model format is not supported at the moment!";
+	} else {
+		output.innerHTML = "This file is invalide. please make sure you selected an animation file."
+	};
+  draw();
+		};
+
+}
+function fun1(x, frame) {
+	if (x <0) {return 0;}; 
+	for (var i=0; i<frame.length-5;i=i+5){
+        if (x>=(frame[i])&&x<=(frame[i+5])){
+			var t = (x-(frame[i]))/(frame[i+5]-frame[i])
+            var res_1 = frame[i+1]*Math.pow(t, 3) + frame[i+2]*Math.pow(t, 2) + frame[i+3]*t + frame[i+4];
+            return res_1;
+        }
+    }
+	return 0;
+}
+function fun1_save(x) {
+	if (x <0) {return 0;}; 
+	for (var i=0; i<function_val_save.length-5;i=i+5){
+        if (x>=(function_val_save[i])&&x<=(function_val_save[i+5])){
+			var t = (x-(function_val_save[i]))/(function_val_save[i+5]-function_val_save[i])
+            var res_1 = function_val_save[i+1]*Math.pow(t, 3) + function_val_save[i+2]*Math.pow(t, 2) + function_val_save[i+3]*t + function_val_save[i+4];
+	if(Math.abs(res_1) > max) {max = Math.abs(res_1);};
+            return res_1;
+        }
+    }
+	return 0;
+}
+function calculefourier(fuction_val, inverse) {
+	var res = '';
+	var temp = 0;
+	for (let i=0; i< periode; i+= periode/interga_press) {
+	temp += fun1(i, fuction_val);
+	}
+	if(inverse) {temp = -1*temp;};
+	if (temp >=0) {res = '+';};
+	res += (temp/interga_press);
+	if(save) {fourrier_save.push(temp/interga_press);}
+	
+	for (let j = 1; j< presition; j++) {
+		temp = 0;
+		for (let i=0; i< periode; i+= periode/interga_press) {
+			temp += fun1(i, fuction_val)*Math.cos(j*2*(Math.PI/periode)*i);
+		}
+		if((2*temp/interga_press) != 0){
+	if(inverse) {temp = -1*temp;};
+		if((2*temp/interga_press) > 0){ res += "+";}
+		res += (2*temp/interga_press)+" *cos("+(j*2*(Math.PI/periode)) +"*" + timer_var +")";}
+	if(save) {fourrier_save.push(2*temp/interga_press);}
+	}
+	
+	for (let j = 1; j< presition; j++) {
+		temp = 0;
+		for (let i=0; i< periode; i+= periode/interga_press) {
+			temp += fun1(i, fuction_val)*Math.sin(j*2*(Math.PI/periode)*i);
+		}
+		if((2*temp/interga_press) != 0){
+	if(inverse) {temp = -1*temp;};
+		if((2*temp/interga_press) > 0){ res += "+";}
+		res += (2*temp/interga_press) + " *sin("+(j*2*(Math.PI/periode)) +"*" + timer_var +")";}
+	if(save) {fourrier_save.push(2*temp/interga_press);}
+	}
+	return res
+}
+function fun2(x) {
+var res = fourrier_save[0];
+for(let i = 1; i<presition; i++) {
+	res+= fourrier_save[i]*Math.cos((i*2*(Math.PI/periode))*x) + fourrier_save[i+ presition-1]*Math.sin((i*2*(Math.PI/periode))*x)
+}
+	if(Math.abs(res) > max) {max = Math.abs(res);};
+return res;
+}
+
+function draw() {
+ var canvas = document.getElementById("canvas");
+ if (null==canvas || !canvas.getContext) return;
+
+ var axes={}, ctx=canvas.getContext("2d");
+ axes.x0 = .5 + .5*canvas.width;  // x0 pixels from left to x=0
+ axes.y0 = .5 + .5*canvas.height; // y0 pixels from top to y=0
+ axes.scale_x = canvas.width/(4*periode);                 // 40 pixels from x=0 to x=1
+ axes.scale_y = canvas.height/(2*max);
+ axes.doNegativeX = true;
+
+ showAxes(ctx,axes);
+ funGraph(ctx,axes,fun1_save,"rgb(11,153,11)",1); 
+ funGraph(ctx,axes,fun2,"rgb(153,11,11)",2); 
+ console.log("end2");
+}
+
+function funGraph (ctx,axes,func,color,thick) {
+ var xx, yy, dx=4, x0=axes.x0, y0=axes.y0;
+ var iMax = Math.round((ctx.canvas.width-x0)/dx);
+ var iMin = axes.doNegativeX ? Math.round(-x0/dx) : 0;
+ ctx.beginPath();
+ ctx.lineWidth = thick;
+ ctx.strokeStyle = color;
+
+ for (var i=iMin;i<=iMax;i++) {
+  xx = dx*i; yy = axes.scale_y*func(xx/axes.scale_x);
+  if (i==iMin) ctx.moveTo(x0+xx,y0-yy);
+  else         ctx.lineTo(x0+xx,y0-yy);
+ }
+ ctx.stroke();
+}
+
+function showAxes(ctx,axes) {
+ var x0=axes.x0, w=ctx.canvas.width;
+ var y0=axes.y0, h=ctx.canvas.height;
+ var xmin = axes.doNegativeX ? 0 : x0;
+ ctx.beginPath();
+ ctx.strokeStyle = "rgb(128,128,128)"; 
+ ctx.moveTo(xmin,y0); ctx.lineTo(w,y0);  // X axis
+ ctx.moveTo(x0,0);    ctx.lineTo(x0,h);  // Y axis
+ ctx.stroke();
+}
+		//Object.values() length
+	</script>
+</body>
+</html>
