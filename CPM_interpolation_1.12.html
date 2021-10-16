@@ -130,7 +130,7 @@
 			}
 			if (save) {function_val_save = function_val;};
 			res_temp = res_temp + calculefourier(function_val, false)+ "<br>,<br>";
-			save = false;
+			if (!isAllZero(fonction_val)) {save = false;};
 			}
 			res_temp += "; position :    "
 			for (let x=0; x<3; x++){
@@ -184,7 +184,9 @@
 						function_val.push(0);
 						function_val.push(0);
 			}
+			if (save) {function_val_save = function_val;};
 			res_temp = res_temp + calculefourier(function_val, x ==0) + "<br>,<br>";
+			if (!isAllZero(fonction_val)) {save = false;};
 			}
 			output.innerHTML += res_temp
 		}
@@ -220,6 +222,10 @@ function fun1_save(x) {
     }
 	return 0;
 }
+function isAllZero(list) {
+	for (let i = 0; i< list.length; i++) {if (list[i] != 0) {return false;};};
+	return true;
+}
 function calculefourier(fuction_val, inverse) {
 	var res = '';
 	var temp = 0;
@@ -239,7 +245,7 @@ function calculefourier(fuction_val, inverse) {
 		if((2*temp/interga_press) != 0){
 	if(inverse) {temp = -1*temp;};
 		if((2*temp/interga_press) > 0){ res += "+";}
-		res += (2*temp/interga_press)+" *cos("+(j*2*(Math.PI/periode)) +"*" + timer_var +")";}
+		res += (2*temp/interga_press)+" *cos("+(j*2*(Math.PI)) +"*" + timer_var +")";}
 	if(save) {fourrier_save.push(2*temp/interga_press);}
 	}
 	
@@ -251,7 +257,7 @@ function calculefourier(fuction_val, inverse) {
 		if((2*temp/interga_press) != 0){
 	if(inverse) {temp = -1*temp;};
 		if((2*temp/interga_press) > 0){ res += "+";}
-		res += (2*temp/interga_press) + " *sin("+(j*2*(Math.PI/periode)) +"*" + timer_var +")";}
+		res += (2*temp/interga_press) + " *sin("+(j*2*(Math.PI)) +"*" + timer_var +")";}
 	if(save) {fourrier_save.push(2*temp/interga_press);}
 	}
 	return res
