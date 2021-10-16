@@ -11,6 +11,7 @@ this respitory have two files:
 This tool use a fourier aproximation that only work on periodic function : the first keyframe and the last keyframe should have the same value, or else it will not work.
 
 This output is a 1-periodic function that will complete a loop when the timer variable goes from 0 to 1 (or any interger n to n+1)
+[in the pdf, the cos and sin value have strange periode, don't worry about it, the screen shot are from an odler version :). ]
 
 # Credit :
 This tool was made by my, for any question, you can contact me on discord (▄█▀zerustu▀█▄#0075) or post an issue on this github.
