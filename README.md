@@ -18,3 +18,5 @@ This tool was made by my, for any question, you can contact me on discord (â–„â–
 
 thanks to dearFox for his interpolation tool, this project start from his tool
 and tanks to gamepiaynmo for creating CPM.
+
+you can find dearfox's interpolation tool (1.16) [here](https://github.com/DearFox/cpm-tools) and my 1.16 tool [here](https://github.com/val9k/CPM_catmull_rom_interpolation)
