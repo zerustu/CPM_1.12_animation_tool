@@ -32,11 +32,13 @@
     <input type="checkbox" id="rotation" name="rotation" onchange="varchange()">
     <label for="roro">show rotation instead of position</label>
 	<br>
+	<div class="error"></div>
 	<canvas id="canvas" width="1000" height="400"></canvas>
 	<br>
 	<div class="output"></div>
 	<script type="text/javascript">
 		var output=document.getElementsByClassName("output")[0];
+		var errore_text =document.getElementsByClassName("error")[0]; 
 		var timer_var = "";
 		var periode = 0;
 		var presition = 10;
@@ -88,6 +90,7 @@
 		var m2;
 		var local_error = 0;
 		max_error = 0;
+		dropdown.length = 0;
 		dropdown.options = [new Option("none","none")];
 		var force_catmull = document.getElementById("force_catmull").checked;
 		if (a.format_version == "1.8.0"){
@@ -155,7 +158,7 @@
 			local_max = 0;
 			fourrier_val = calculefourier(function_val, false);
 			if(local_max > max) {max = local_max;};
-			local_error = calcule_error(function_val, fourrier_val);
+			local_error = calcule_error(function_val, fourrier_val, local_max);
 			if(local_error > max_error) {max_error = local_error;};
 			res_temp = res_temp + format_fourier(fourrier_val)+ "<br>,<br>";
 			save = false;
@@ -215,12 +218,12 @@
 			local_max = 0;
 			fourrier_val = calculefourier(function_val, false);
 			if(local_max > max) {max = local_max;};
-			local_error = calcule_error(function_val, fourrier_val);
+			local_error = calcule_error(function_val, fourrier_val, local_max);
 			if(local_error > max_error) {max_error = local_error;};
 			res_temp = res_temp + format_fourier(fourrier_val) + "<br>,<br>";
 			if (save) {function_val_save = function_val; fourrier_save = fourrier_val;};
 			}
-			output.innerHTML += "max error: " + (max_error*100) + "%<br><br>" + res_temp
+			output.innerHTML +=  res_temp
 		}
 	} else if (a.format_version != undefined){
 		output.innerHTML = "Your model format is : "+ a.format_version + " This model format is not supported at the moment!";
@@ -228,6 +231,7 @@
 		output.innerHTML = "This file is invalide. please make sure you selected an animation file."
 	};
 	varchange();
+			errore_text.innerHTML = "max error: " + (max_error*100) + "%";
 		};
 
 }
@@ -327,9 +331,11 @@ function varchange() {
 						function_val.push(0);
 			local_max = 0;
 			fourrier_val = calculefourier(function_val, false);
+			local_error = calcule_error(function_val, fourrier_val, local_max);
 			function_val_save = function_val; 
 			fourrier_save = fourrier_val;
 			max = local_max;
+			errore_text.innerHTML = "this bone max error: " + (local_error*100) + "%";
   draw();
 }
 		
@@ -384,11 +390,12 @@ function format_fourier(fouriercof) {
 	return res
 }
 
-function calcule_error(fun_val, four_val, ) {
+function calcule_error(fun_val, four_val, local_max_f) {
 	var temp = 0;
 	var res = 0;
+	local_max_f = Math.max(1, local_max_f);
 	for (let i=0; i< periode; i+= periode/interga_press) {
-		temp = Math.abs((fun1(i, fun_val)-fun2(i, four_val))/fun1(i, fun_val));
+		temp = Math.abs((fun1(i, fun_val)-fun2(i, four_val))/local_max_f);
 		if(temp > res) {res = temp;};
 	}
 	return res;
