@@ -389,7 +389,7 @@ function calcule_error(fun_val, four_val, ) {
 	var res = 0;
 	for (let i=0; i< periode; i+= periode/interga_press) {
 		temp = Math.abs((fun1(i, fun_val)-fun2(i, four_val))/fun1(i, fun_val));
-		if(temp > res) {res = temp:}:
+		if(temp > res) {res = temp;};
 	}
 	return res;
 }
