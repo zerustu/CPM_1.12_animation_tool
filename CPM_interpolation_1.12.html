@@ -19,6 +19,19 @@
 	<br>
 	<button type="button" onclick="readFile(document.getElementsByClassName('test')[0])">Load!</button>
 	<br>
+    <label for="dabone">which bone to show the aproximation</label>
+	<br>
+	<select id="save_bone" onchange="varchange()">
+		<option value="" selected>none</option>
+	</select>
+	<select id="axe" onchange="varchange()">
+		<option value=0 selected>x</option>
+		<option value=1>y</option>
+		<option value=2>z</option>
+	</select>
+    <input type="checkbox" id="rotation" name="rotation" onchange="varchange()">
+    <label for="roro">show rotation instead of position</label>
+	<br>
 	<canvas id="canvas" width="1000" height="400"></canvas>
 	<br>
 	<div class="output"></div>
@@ -31,13 +44,22 @@
 		var function_val_save = [];
 		var fourrier_save = [];
 		var save = true;
+		var current_max =0;
+		var max_error = 0;
 		var max = 0;
+		var local_max = 0;
 		var rotation_order = [1, 0, 2];
+		var dropdown = document.getElementById("save_bone");
+		var axe = document.getElementById("axe");
+		var a;
 
 		function readFile(input) {
 			timer_var = document.getElementById("timer").value;
 			presition = parseInt(document.getElementById("pres").value);
 			document.getElementById("canvas").getContext("2d").clearRect(0, 0, 1000, 400);
+			save = true
+			function_val_save = [];
+			fourrier_save = [];
 			output.innerHTML = '';
   let file = input.files[0];
 
@@ -49,10 +71,7 @@
     console.log(reader.error);
   };
   reader.onload = function() {
-			save = true
-			function_val_save = [];
-			fourrier_save = [];
-		var a = JSON.parse(reader.result);
+		a = JSON.parse(reader.result);
 		var b = Object.values(Object.values(a))[1];
 		var c = Object.values(Object.values(b))[0];
 		var d = Object.values(Object.values(c))[2];
@@ -67,6 +86,9 @@
 		var p3;
 		var m1;
 		var m2;
+		var local_error = 0;
+		max_error = 0;
+		dropdown.options = [new Option("none","none")];
 		var force_catmull = document.getElementById("force_catmull").checked;
 		if (a.format_version == "1.8.0"){
 		console.log(Object.keys(d));
@@ -76,9 +98,11 @@
 			var bones_name = JSON.stringify(bone).replace(/['"]+/g, '')
 			var res_temp = bones_name + ': rotation :    ';
 			console.log(bones_name);
+			dropdown.options[dropdown.options.length] = new Option(bones_name, bones_name);
 			for (let y=0; y<3; y++) {
 			var x = rotation_order[y];
 			var function_val = [];
+			var fourrier_val = [];
 			if(Object.values(d)[i].rotation!=undefined){
 				for (let i1=0; i1<Object.values(Object.values(d)[i].rotation).length-1;i1++){
 					t1 = parseFloat(Object.keys(Object.values(d)[i].rotation)[i1]);
@@ -128,10 +152,13 @@
 						function_val.push(0);
 						function_val.push(0);
 			}
-			if (save) {function_val_save = function_val;};
-			res_temp = res_temp + calculefourier(function_val, false)+ "<br>,<br>";
-			if (!isAllZero(fourrier_save)) {save = false;};
-			if(save) { fourrier_save = [];};
+			local_max = 0;
+			fourrier_val = calculefourier(function_val, false);
+			if(local_max > max) {max = local_max;};
+			local_error = calcule_error(function_val, fourrier_val);
+			if(local_error/local_max > max_error) {max_error = local_error/local_max;};
+			res_temp = res_temp + format_fourier(fourrier_val)+ "<br>,<br>";
+			save = false;
 			}
 			res_temp += "; position :    "
 			for (let x=0; x<3; x++){
@@ -185,19 +212,22 @@
 						function_val.push(0);
 						function_val.push(0);
 			}
-			if (save) {function_val_save = function_val;};
-			res_temp = res_temp + calculefourier(function_val, x ==0) + "<br>,<br>";
-			if (!isAllZero(fourrier_save)) {save = false;};
-			if(save) { fourrier_save = [];};
+			local_max = 0;
+			fourrier_val = calculefourier(function_val, false);
+			if(local_max > max) {max = local_max;};
+			local_error = calcule_error(function_val, fourrier_val);
+			if(local_error/local_max > max_error) {max_error = local_error/local_max;};
+			res_temp = res_temp + format_fourier(fourrier_val) + "<br>,<br>";
+			if (save) {function_val_save = function_val; fourrier_save = fourrier_val;};
 			}
-			output.innerHTML += res_temp
+			output.innerHTML += "max error: " + (max_error*100) + "%<br><br>" + res_temp
 		}
 	} else if (a.format_version != undefined){
 		output.innerHTML = "Your model format is : "+ a.format_version + " This model format is not supported at the moment!";
 	} else {
 		output.innerHTML = "This file is invalide. please make sure you selected an animation file."
 	};
-  draw();
+	varchange();
 		};
 
 }
@@ -207,6 +237,7 @@ function fun1(x, frame) {
         if (x>=(frame[i])&&x<=(frame[i+5])){
 			var t = (x-(frame[i]))/(frame[i+5]-frame[i])
             var res_1 = frame[i+1]*Math.pow(t, 3) + frame[i+2]*Math.pow(t, 2) + frame[i+3]*t + frame[i+4];
+			if(Math.abs(res_1) > local_max) {local_max = Math.abs(res_1);};
             return res_1;
         }
     }
@@ -218,37 +249,114 @@ function fun1_save(x) {
         if (x>=(function_val_save[i])&&x<=(function_val_save[i+5])){
 			var t = (x-(function_val_save[i]))/(function_val_save[i+5]-function_val_save[i])
             var res_1 = function_val_save[i+1]*Math.pow(t, 3) + function_val_save[i+2]*Math.pow(t, 2) + function_val_save[i+3]*t + function_val_save[i+4];
-	if(Math.abs(res_1) > max) {max = Math.abs(res_1);};
+			if(Math.abs(res_1) > max) {max = Math.abs(res_1);};
             return res_1;
         }
     }
 	return 0;
 }
-function isAllZero(list) {
-	for (let i = 0; i< list.length; i++) {if (list[i] != 0) {return false;};};
-	return true;
+
+function varchange() {
+			document.getElementById("canvas").getContext("2d").clearRect(0, 0, 1000, 400);
+	var b = Object.values(Object.values(a))[1];
+	var c = Object.values(Object.values(b))[0];
+	var d = Object.values(Object.values(c))[2];
+	var loop = c.loop;
+	var t0;
+	var t1;
+	var t2;
+	var t3;
+	var p0;
+	var p1;
+	var p2;
+	var p3;
+	var m1;
+	var m2;
+	var bone = d[dropdown.value];
+	var force_catmull = document.getElementById("force_catmull").checked;
+	var rot_pos;
+	if(document.getElementById("rotation").checked){rot_pos = bone.rotation;} else {rot_pos = bone.position};
+	var x = axe.value;
+	var function_val = [];
+				for (let i1=0; i1<Object.values(rot_pos).length-1;i1++){
+					t1 = parseFloat(Object.keys(rot_pos)[i1]);
+					function_val.push(t1);
+					p1 = Object.values(rot_pos)[i1];
+					t2 = parseFloat(Object.keys(rot_pos)[i1+1]);
+					p2 = Object.values(rot_pos)[i1+1];
+					if (p2.post!=undefined){p2 = p2.post};
+					if (p1.post==undefined && !force_catmull){
+						function_val.push(0);
+						function_val.push(0);
+						function_val.push(p2[x]-p1[x]);
+						function_val.push(p1[x]);
+					} 
+					else {
+						if (p1.post!=undefined){p1 = p1.post};
+						if(i1 == 0){
+							t0= parseFloat(Object.keys(rot_pos)[Object.values(rot_pos).length-2])-c.animation_length;
+							p0= Object.values(rot_pos)[Object.values(rot_pos).length-2];
+						}
+						else {
+							t0 = parseFloat(Object.keys(rot_pos)[i1-1]);
+							p0 = Object.values(rot_pos)[i1-1];
+						}
+						if (p0.post!=undefined){p0 = p0.post};
+						if( i1 == Object.values(rot_pos).length-2) {
+							t3 = parseFloat(Object.keys(rot_pos)[1])+c.animation_length;
+							p3 = Object.values(rot_pos)[1];
+						}
+						else {
+							t3 = parseFloat(Object.keys(rot_pos)[i1+2]);
+							p3 = Object.values(rot_pos)[i1+2];
+						}
+						if (p3.post!=undefined){p3 = p3.post};
+						m1 = (t2-t1)*((p1[x]-p0[x])/(t1-t0)-(p2[x]-p0[x])/(t2-t0)+(p2[x]-p1[x])/(t2-t1));
+						m2 = (t2-t1)*((p2[x]-p1[x])/(t2-t1)-(p3[x]-p1[x])/(t3-t1)+(p3[x]-p2[x])/(t3-t2));
+						function_val.push((2*p1[x]-2*p2[x]+m1+m2));
+						function_val.push((-3*p1[x] +3*p2[x]-2*m1-m2));
+						function_val.push( m1);
+						function_val.push(p1[x]);
+					}
+				}
+				periode = c.animation_length;
+						function_val.push(periode);
+						function_val.push(0);
+						function_val.push(0);
+						function_val.push(0);
+						function_val.push(0);
+			local_max = 0;
+			fourrier_val = calculefourier(function_val, false);
+			function_val_save = function_val; 
+			fourrier_save = fourrier_val;
+			max = local_max;
+  draw();
 }
+		
+function fun2(x, four_val) {
+var res = four_val[0];
+for(let i = 1; i<presition; i++) {
+	res+= four_val[i]*Math.cos((i*2*(Math.PI/periode))*x) + four_val[i+ presition-1]*Math.sin((i*2*(Math.PI/periode))*x)
+}
+	if(Math.abs(res) > max) {max = Math.abs(res);};
+return res;
+}
+
 function calculefourier(fuction_val, inverse) {
-	var res = '';
+	var list_val = []
 	var temp = 0;
 	for (let i=0; i< periode; i+= periode/interga_press) {
 	temp += fun1(i, fuction_val);
 	}
 	if(inverse) {temp = -1*temp;};
-	if (temp >=0) {res = '+';};
-	res += (temp/interga_press);
-	if(save) {fourrier_save.push(temp/interga_press);}
-	
+	list_val.push(temp/interga_press);
 	for (let j = 1; j< presition; j++) {
 		temp = 0;
 		for (let i=0; i< periode; i+= periode/interga_press) {
 			temp += fun1(i, fuction_val)*Math.cos(j*2*(Math.PI/periode)*i);
 		}
-		if((2*temp/interga_press) != 0){
-	if(inverse) {temp = -1*temp;};
-		if((2*temp/interga_press) > 0){ res += "+";}
-		res += (2*temp/interga_press)+" *cos("+(j*2*(Math.PI)) +"*" + timer_var +")";}
-	if(save) {fourrier_save.push(2*temp/interga_press);}
+		if(inverse) {temp = -1*temp;};
+		list_val.push(2*temp/interga_press);
 	}
 	
 	for (let j = 1; j< presition; j++) {
@@ -256,15 +364,35 @@ function calculefourier(fuction_val, inverse) {
 		for (let i=0; i< periode; i+= periode/interga_press) {
 			temp += fun1(i, fuction_val)*Math.sin(j*2*(Math.PI/periode)*i);
 		}
-		if((2*temp/interga_press) != 0){
-	if(inverse) {temp = -1*temp;};
-		if((2*temp/interga_press) > 0){ res += "+";}
-		res += (2*temp/interga_press) + " *sin("+(j*2*(Math.PI)) +"*" + timer_var +")";}
-	if(save) {fourrier_save.push(2*temp/interga_press);}
+		if(inverse) {temp = -1*temp;};
+		list_val.push(2*temp/interga_press);
+	}
+	return list_val
+}
+function format_fourier(fouriercof) {
+	var res = '';
+	if (fouriercof[0] >=0) {res = '+';};
+	res += (fouriercof[0]/interga_press);
+	for (let i = 1; i < (fouriercof.length+1)/2; i++) {
+		if(fouriercof[i] != 0){
+		if(fouriercof[i] > 0){ res += "+";}
+		res += fouriercof[i] +" *cos("+(i*2*Math.PI) +"*" + timer_var +")";}
+		if(fouriercof[i+(fouriercof.length-1)/2] != 0){
+		if(fouriercof[i+(fouriercof.length-1)/2] > 0){ res += "+";}
+		res += fouriercof[i+(fouriercof.length-1)/2] + " *sin("+(i*2*Math.PI) +"*" + timer_var +")";}
 	}
 	return res
 }
-function fun2(x) {
+
+function calcule_error(fun_val, four_val) {
+	var temp = 0;
+	for (let i=0; i< periode; i+= periode/interga_press) {
+		temp += (fun1(i, fun_val)-fun2(i, four_val))**2;
+	}
+	return temp/interga_press;
+}
+
+function fun2_save(x) {
 var res = fourrier_save[0];
 for(let i = 1; i<presition; i++) {
 	res+= fourrier_save[i]*Math.cos((i*2*(Math.PI/periode))*x) + fourrier_save[i+ presition-1]*Math.sin((i*2*(Math.PI/periode))*x)
@@ -286,7 +414,7 @@ function draw() {
 
  showAxes(ctx,axes);
  funGraph(ctx,axes,fun1_save,"rgb(11,153,11)",1); 
- funGraph(ctx,axes,fun2,"rgb(153,11,11)",2); 
+ funGraph(ctx,axes,fun2_save,"rgb(153,11,11)",2); 
  console.log("end2");
 }
 
