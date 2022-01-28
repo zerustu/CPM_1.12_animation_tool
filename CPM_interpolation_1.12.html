@@ -384,7 +384,7 @@ function calculefourier(fuction_val, inverse) {
 function format_fourier(fouriercof) {
 	var res = '';
 	if (fouriercof[0] >=0) {res = '+';};
-	res += (fouriercof[0]/interga_press);
+	res += (fouriercof[0]);
 	if (fouriercof[1] >=0) {res += "+";};
 	res += (fouriercof[1]*periode+"*"+timer_var);
 	for (let i = 2; i < (fouriercof.length)/2; i++) {
