@@ -88,6 +88,9 @@
 		var p3;
 		var m1;
 		var m2;
+		var devx = 0;
+		var devy = 0;
+		var devz = 0;
 		var local_error = 0;
 		max_error = 0;
 		dropdown.length = 0;
@@ -340,26 +343,29 @@ function varchange() {
 }
 		
 function fun2(x, four_val) {
-var res = four_val[0];
+var res = four_val[0]+x*four_val[1];
 for(let i = 1; i<presition; i++) {
-	res+= four_val[i]*Math.cos((i*2*(Math.PI/periode))*x) + four_val[i+ presition-1]*Math.sin((i*2*(Math.PI/periode))*x)
+	res+= four_val[i+1]*Math.cos((i*2*(Math.PI/periode))*x) + four_val[i+ presition]*Math.sin((i*2*(Math.PI/periode))*x)
 }
 	if(Math.abs(res) > max) {max = Math.abs(res);};
 return res;
 }
 
 function calculefourier(fuction_val, inverse) {
-	var list_val = []
+	var list_val = [];
+	var devl = (fun1(periode*(1-1/interga_press), fuction_val) - fun1(0, fuction_val))/periode;
+	if(inverse) {devl = -1*devl;};
 	var temp = 0;
 	for (let i=0; i< periode; i+= periode/interga_press) {
-	temp += fun1(i, fuction_val);
+	temp += fun1(i, fuction_val) - devl*i;
 	}
 	if(inverse) {temp = -1*temp;};
 	list_val.push(temp/interga_press);
+	list_val.push(devl)
 	for (let j = 1; j< presition; j++) {
 		temp = 0;
 		for (let i=0; i< periode; i+= periode/interga_press) {
-			temp += fun1(i, fuction_val)*Math.cos(j*2*(Math.PI/periode)*i);
+			temp += (fun1(i, fuction_val)-i*devl)*Math.cos(j*2*(Math.PI/periode)*i);
 		}
 		if(inverse) {temp = -1*temp;};
 		list_val.push(2*temp/interga_press);
@@ -368,7 +374,7 @@ function calculefourier(fuction_val, inverse) {
 	for (let j = 1; j< presition; j++) {
 		temp = 0;
 		for (let i=0; i< periode; i+= periode/interga_press) {
-			temp += fun1(i, fuction_val)*Math.sin(j*2*(Math.PI/periode)*i);
+			temp += (fun1(i, fuction_val)-i*devl)*Math.sin(j*2*(Math.PI/periode)*i);
 		}
 		if(inverse) {temp = -1*temp;};
 		list_val.push(2*temp/interga_press);
@@ -379,13 +385,15 @@ function format_fourier(fouriercof) {
 	var res = '';
 	if (fouriercof[0] >=0) {res = '+';};
 	res += (fouriercof[0]/interga_press);
-	for (let i = 1; i < (fouriercof.length+1)/2; i++) {
+	if (fouriercof[1] >=0) {res += "+";};
+	res += (fouriercof[1]+"*"+timer_var);
+	for (let i = 2; i < (fouriercof.length)/2; i++) {
 		if(fouriercof[i] != 0){
 		if(fouriercof[i] > 0){ res += "+";}
-		res += fouriercof[i] +" *cos("+(i*2*Math.PI) +"*" + timer_var +")";}
-		if(fouriercof[i+(fouriercof.length-1)/2] != 0){
-		if(fouriercof[i+(fouriercof.length-1)/2] > 0){ res += "+";}
-		res += fouriercof[i+(fouriercof.length-1)/2] + " *sin("+(i*2*Math.PI) +"*" + timer_var +")";}
+		res += fouriercof[i] +" *cos("+((i-1)*2*Math.PI) +"*" + timer_var +")";}
+		if(fouriercof[i+(fouriercof.length-2)/2] != 0){
+		if(fouriercof[i+(fouriercof.length-2)/2] > 0){ res += "+";}
+		res += fouriercof[i+(fouriercof.length-2)/2] + " *sin("+((i-1)*2*Math.PI) +"*" + timer_var +")";}
 	}
 	return res
 }
@@ -402,9 +410,9 @@ function calcule_error(fun_val, four_val, local_max_f) {
 }
 
 function fun2_save(x) {
-var res = fourrier_save[0];
+var res = fourrier_save[0]+x*fourrier_save[1];
 for(let i = 1; i<presition; i++) {
-	res+= fourrier_save[i]*Math.cos((i*2*(Math.PI/periode))*x) + fourrier_save[i+ presition-1]*Math.sin((i*2*(Math.PI/periode))*x)
+	res+= fourrier_save[i+1]*Math.cos((i*2*(Math.PI/periode))*x) + fourrier_save[i+ presition]*Math.sin((i*2*(Math.PI/periode))*x)
 }
 	if(Math.abs(res) > max) {max = Math.abs(res);};
 return res;
