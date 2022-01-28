@@ -386,7 +386,7 @@ function format_fourier(fouriercof) {
 	if (fouriercof[0] >=0) {res = '+';};
 	res += (fouriercof[0]/interga_press);
 	if (fouriercof[1] >=0) {res += "+";};
-	res += (fouriercof[1]+"*"+timer_var);
+	res += (fouriercof[1]*periode+"*"+timer_var);
 	for (let i = 2; i < (fouriercof.length)/2; i++) {
 		if(fouriercof[i] != 0){
 		if(fouriercof[i] > 0){ res += "+";}
