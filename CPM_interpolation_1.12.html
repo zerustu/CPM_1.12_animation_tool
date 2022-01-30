@@ -354,13 +354,13 @@ return res;
 function calculefourier(fuction_val, inverse) {
 	var list_val = [];
 	var devl = (fun1(periode*(1-1/interga_press), fuction_val) - fun1(0, fuction_val))/periode;
-	if(inverse) {devl = -1*devl;};
 	var temp = 0;
 	for (let i=0; i< periode; i+= periode/interga_press) {
 	temp += fun1(i, fuction_val) - devl*i;
 	}
 	if(inverse) {temp = -1*temp;};
 	list_val.push(temp/interga_press);
+	if(inverse) {list_val.push(-1*devl);} else {list_val.push(devl);};
 	list_val.push(devl)
 	for (let j = 1; j< presition; j++) {
 		temp = 0;
