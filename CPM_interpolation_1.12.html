@@ -219,7 +219,7 @@
 						function_val.push(0);
 			}
 			local_max = 0;
-			fourrier_val = calculefourier(function_val, false);
+			fourrier_val = calculefourier(function_val, x==0);
 			if(local_max > max) {max = local_max;};
 			local_error = calcule_error(function_val, fourrier_val, local_max);
 			if(local_error > max_error) {max_error = local_error;};
@@ -333,7 +333,7 @@ function varchange() {
 						function_val.push(0);
 						function_val.push(0);
 			local_max = 0;
-			fourrier_val = calculefourier(function_val, false);
+			fourrier_val = calculefourier(function_val, x == 0);
 			local_error = calcule_error(function_val, fourrier_val, local_max);
 			function_val_save = function_val; 
 			fourrier_save = fourrier_val;
@@ -360,8 +360,9 @@ function calculefourier(fuction_val, inverse) {
 	}
 	if(inverse) {temp = -1*temp;};
 	list_val.push(temp/interga_press);
-	if(inverse) {list_val.push(-1*devl);} else {list_val.push(devl);};
-	list_val.push(devl)
+	var devlc = devl;
+	if(inverse) {devlc = -1*devl;};
+	list_val.push(devlc);
 	for (let j = 1; j< presition; j++) {
 		temp = 0;
 		for (let i=0; i< periode; i+= periode/interga_press) {
